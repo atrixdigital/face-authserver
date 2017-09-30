@@ -38,7 +38,7 @@ router.post('/analyze',function(req,res){
         .then(function(data){
             console.log(data);
 
-             if(data.length === 1){
+             
             
 
                 // we will have the result which has the url of picture
@@ -52,6 +52,8 @@ router.post('/analyze',function(req,res){
                         analyzesSmile : true
 
                         }).then(function(data){
+
+                          if(data.length === 1){
 
                             fs.unlink("files/"+uid+".jpg", function (err) {
               							  if (err) throw err;
@@ -68,10 +70,6 @@ router.post('/analyze',function(req,res){
                              var high = emotion['anger'];
 
                             for( var key in emotion){
-                            	console.log(key);
-
-                            	
-
                             	if(emotion[key] > high){
                                     high = emotion[key];
                                     higiestEmotion = key;
@@ -81,7 +79,7 @@ router.post('/analyze',function(req,res){
                              
                             
                              var attributes = {
-                                  smile: data[0].faceAttributes.smile,
+                                  smile: data[0].faceAttributes.smile*100,
                                   gender : data[0].faceAttributes.gender,
                                   age : data[0].faceAttributes.age,
                                   glasses: data[0].faceAttributes.glasses ,
@@ -89,6 +87,12 @@ router.post('/analyze',function(req,res){
 
                              } 
                             res.json({success:true,data:attributes});
+
+
+                             }else{
+                           res.json({success:false,data:"Invalid photo. Send photo with single face only"});  
+                        }   
+
                         
 
                         }).catch(function(err){
@@ -97,10 +101,7 @@ router.post('/analyze',function(req,res){
                         })
 
 
-                    }else{
-                           res.json({success:false,data:"Invalid photo. Send photo with single face only"});  
-                        }   
-
+                   
 
 
                 
