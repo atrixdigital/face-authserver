@@ -59,39 +59,66 @@ router.post('/signup',function(req,res){
 
                             console.log(data.length);
                             if(data.length === 1){
-                                console.log(data[0]);
+                                console.log("This is data", data[0].faceId);
                                 //  send data to face Api
                                 //Send data to congitive API 
                                     let c = client.face;
                                     let f = c.faceList;
-                                    f.addFace(faceListId,{
-                                        url:result.url,
-                                        userData: name
-                                    })
-                                    .then((response)=>{/*Handle PersistantId into Data if no error found*/
-                                        console.log(response);
-                                        // save the data to firebase
-                                        let data = {
-                                            // face_id:response.persistedFaceId,
-                                            face_list_id:faceListId,
-                                            name:name,
-                                            imgUrl: result.url
-                                        }
-                                        console.log(data);				
-                                        console.log("face added " + data.name + " in list " + data.face_list_id );
 
-                                        // save the data to firebase
-                                        app.database().ref('users/').child(response.persistedFaceId).set(data).then(function(data){
-                                            res.json({success:true,data:data});    
-                                        }).catch(function(error){
-                                            res.json({success:false,data:error});
-                                        });
+                                 // here we will check if that face is not already in the list
+                                client.face.similar(data[0].faceId, {
+                                        candidateFaceListId: faceListId,
+                                        maxCandidates: "1",
+                                        mode:"matchFace"    
+                                    }).then(response => {
+                                        /*for finding the face with higest confidence*/
+                                        console.log(response);
+                                        let higest = response[0];
+
+                                        console.log(higest.confidence);
+
+                                        if(higest.confidence > 0.7){
+                                          res.json({success:false, data:"Already have an account with this face"});  
+                                        }else{
+
+                                            f.addFace(faceListId,{
+                                                url:result.url,
+                                                userData: name
+                                            })
+                                            .then((response)=>{/*Handle PersistantId into Data if no error found*/
+                                                console.log(response);
+                                                // save the data to firebase
+                                                let data = {
+                                                    // face_id:response.persistedFaceId,
+                                                    face_list_id:faceListId,
+                                                    name:name,
+                                                    imgUrl: result.url
+                                                }
+                                                console.log(data);               
+                                                console.log("face added " + data.name + " in list " + data.face_list_id );
+
+                                                // save the data to firebase
+                                                app.database().ref('users/').child(response.persistedFaceId).set(data).then(function(data){
+                                                    res.json({success:true,data:data});    
+                                                }).catch(function(error){
+                                                    res.json({success:false,data:error});
+                                                });
+                                                
+                                                
+                                            
+                                            }).catch((err)=>{
+                                                res.json({success:false,data:err.message}); 
+                                            });
+
+                                        }
                                         
-                                        
-                                    
-                                    }).catch((err)=>{
-                                        res.json({success:false,data:err.message}); 
-                                    });
+                                       
+
+                                     }).catch(err =>{
+                                        console.log("Error: " + err.message);
+                                        res.json({success:false, data:err});
+                                    })
+
                             }else{
                                 res.json({success:false,data:"Invalid photo"});  
                             }
