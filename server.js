@@ -1,6 +1,5 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const oxford = require('project-oxford'), client = new oxford.Client('0bd837cc949249bea74f91fd34a55d69','westcentralus');
 const app = express();
 
 
@@ -8,12 +7,15 @@ var PORT = process.env.PORT || 4200;
 
 const login = require('./routes/login');
 const signup = require('./routes/signup');
+const analyzer = require('./routes/analyzer');
+
 
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(bodyParser.json());
 
 app.use('/api', login);
 app.use('/api', signup);
+app.use('/api', analyzer);
 
 /*Server Setup*/
 app.use(express.static(__dirname + '/public'));

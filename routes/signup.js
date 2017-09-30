@@ -19,6 +19,8 @@ cloudinary.config(cloudConfig);
 
 
 router.post('/signup',function(req,res){
+
+
     var name = req.body.name;
     var photoBase64 = req.body.photo;
     var faceListId = '121';

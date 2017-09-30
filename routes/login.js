@@ -3,12 +3,9 @@ const oxford = require('project-oxford'), client = new oxford.Client('f6a99bdaf2
 let router = express.Router();
 var shortid = require('shortid');
 var base64Img = require('base64-img');
+var fs = require('fs');
 
 var app = require('../firebase');
-var cloudinary = require('cloudinary');
-var cloudConfig = require('../cloudinary');
-
-cloudinary.config(cloudConfig);
 
 var faceListId = '121';
 
@@ -36,58 +33,58 @@ router.post('/login',function(req,res){
                }, 2000);
     }).then(function(data){
         console.log(data);
-        // res.json({success:true,data:data});
-
-        //  upload to cloudinary
-        cloudinary.v2.uploader.upload('./files/'+uid+'.jpg', function(error, result) {
-            if(error){
-                console.log("err occured");
-                res.json({success:false,data:error})
-            }
-            
-                console.log(result.url);
-                // res.json({success:true,data:result.url});
+       
                 client.face.detect({
-                    url: result.url,
+                    path: 'files/'+uid+'.jpg',
                     returnFaceId: true
                     })
                     .then(response => {
+
+                        fs.unlink("files/"+uid+".jpg", function (err) {
+                          if (err) throw err;
+                          console.log('File deleted!', "files/"+uid+".jpg");
+                        });  
+
                         console.log(response);
                       
                       if(response.length === 1){
 
                       
-                        /*sending the detected face id to the project-oxrord "similar()" */
+                        /*sending the detected face id to the project-oxford "similar()" */
                         client.face.similar(response[0].faceId, {
                             candidateFaceListId: faceListId,
-                            maxCandidates: "3",
+                            maxCandidates: "1",
                             mode:"matchFace"	
                         }).then(response => {
                             /*for finding the face with higest confidence*/
                             console.log(response);
                             let higest = response[0];
                             
-                            for (var i = 1; i < 3; i++)
-                            {	
-                                if(response[i].confidence > higest.confidence)
-                                    higest = response[i];
+                          
 
-                                console.log(higest);
+                            console.log(higest.confidence);
+
+                            if(higest.confidence > 0.7){
+
+                                  app.database().ref('/users/' + higest.persistedFaceId).once('value').then(function(snapshot) {
+                                       console.log(snapshot.val());
+                                        
+                                       if(snapshot.val() === null){
+                                        res.json({success:fasle,data:"No record found in database"}); 
+                                       }else{
+                                        res.json({success:true,data:snapshot.val()}); 
+                                       }
+
+                                           
+                                    })
+
+                            } else{
+
+                                res.json({success:true,data:"Not a Member. Scan again"});
+
                             }
 
-                            console.log(higest); 
-
-                            app.database().ref('/users/' + higest.persistedFaceId).once('value').then(function(snapshot) {
-                               console.log(snapshot.val());
-                                
-                               if(snapshot.val() === null){
-                                res.json({success:fasle,data:"No record found in data base"}); 
-                               }else{
-                                res.json({success:true,data:snapshot.val()}); 
-                               }
-
-                                   
-                            })
+                          
 
                          }).catch(err =>{
                             console.log("Error: " + err.message);
@@ -105,7 +102,7 @@ router.post('/login',function(req,res){
     
          });
         
-    });
+   
 },function(err){
     
 console.log("error accured" + err);
