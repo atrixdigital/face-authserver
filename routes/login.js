@@ -10,7 +10,7 @@ var cloudConfig = require('../cloudinary');
 
 cloudinary.config(cloudConfig);
 
-var faceListId = '120';
+var faceListId = '121';
 
 
 
